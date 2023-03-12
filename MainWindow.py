@@ -157,18 +157,23 @@ class Win4(QMainWindow, GameWindow):
 
     def mousePressEvent(self, e):
         if e.button() == Qt.LeftButton:
-            tuple1 = ((e.pos().y() - 100)//Cell.cell_size, (e.pos().x() - 100) // Cell.cell_size)
-            chain = Game.find_chain(self.field.field, tuple1)
-            if len(chain) > 1:
-                for k in chain:
-                    self.field.field[k[0] - 1][k[1] - 1].color = Color.NONE
-                self.update()
+            if (e.pos().y() - 100) // Cell.cell_size < self.field_size and (e.pos().x() - 100) // Cell.cell_size < self.field_size*2:
+                tuple1 = ((e.pos().y() - 100) // Cell.cell_size, (e.pos().x() - 100) // Cell.cell_size)
+                chain = Game.find_chain(self.field.field, tuple1)
+                if len(chain) > 1:
+                    for k in chain:
+                        self.field.field[k[0] - 1][k[1] - 1].color = Color.NONE
+                    Game.delete_empty_cells(self.field.field)
+                    self.update()
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.shuffle_btn2 = None
+        self.shuffle_btn1 = None
+        self.shuffle_btn = None
         self.stacked = QStackedWidget(self)
         self.setCentralWidget(self.stacked)
 
@@ -187,6 +192,40 @@ class MainWindow(QMainWindow):
 
         self.create_buttons(self.window_Win1)
         self.window_Win1.setStyleSheet('#Win1 {background-color: #FFD700;}')
+
+    def create_shuffle_button(self, parent):
+        self.shuffle_btn = QPushButton("R", parent)
+        self.shuffle_btn.setGeometry(QRect(100, 600, 50, 50))
+        self.shuffle_btn.setFont(QFont("Times New Roman", 20))
+        self.shuffle_btn.clicked.connect(self.shuffle_btn_clicked)
+        self.shuffle_btn.show()
+
+        self.shuffle_btn1 = QPushButton("R", parent)
+        self.shuffle_btn1.setGeometry(QRect(165, 600, 50, 50))
+        self.shuffle_btn1.setFont(QFont("Times New Roman", 20))
+        self.shuffle_btn1.clicked.connect(self.shuffle_btn_clicked1)
+        self.shuffle_btn1.show()
+
+        self.shuffle_btn2 = QPushButton("R", parent)
+        self.shuffle_btn2.setGeometry(QRect(230, 600, 50, 50))
+        self.shuffle_btn2.setFont(QFont("Times New Roman", 20))
+        self.shuffle_btn2.clicked.connect(self.shuffle_btn_clicked2)
+        self.shuffle_btn2.show()
+
+    def shuffle_btn_clicked(self):
+        Game.shuffle(self.window_Win4.field.field)
+        self.shuffle_btn.setEnabled(False)
+        self.update()
+
+    def shuffle_btn_clicked1(self):
+        Game.shuffle(self.window_Win4.field.field)
+        self.shuffle_btn1.setEnabled(False)
+        self.update()
+
+    def shuffle_btn_clicked2(self):
+        Game.shuffle(self.window_Win4.field.field)
+        self.shuffle_btn2.setEnabled(False)
+        self.update()
 
     def create_button_back(self, parent):
         btn_back = QPushButton("Back", parent)
@@ -241,3 +280,4 @@ class MainWindow(QMainWindow):
     def go_win4(self):
         self.stacked.setCurrentIndex(3)
         self.create_button_back(self.window_Win4)
+        self.create_shuffle_button(self.window_Win4)
