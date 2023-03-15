@@ -41,8 +41,7 @@ def similar_near(extendedField, index, list, visited):
     for k in range(4):
         if 0 < index[0] + dx[k] < len(extendedField) and 0 < index[1] + dy[k] < 2 * len(extendedField) - 2:
             if extendedField[index[0] + dx[k]][index[1] + dy[k]].color == extendedField[index[0]][index[1]].color and \
-                    visited[index[0] + dx[k]][index[1] + dy[k]] is False and extendedField[index[0] + dx[k]][
-                index[1] + dy[k]].color != Color.NONE:
+                    visited[index[0] + dx[k]][index[1] + dy[k]] is False and extendedField[index[0] + dx[k]][index[1] + dy[k]].color != Color.NONE:
                 list.add((index[0] + dx[k], index[1] + dy[k]))
                 visited[index[0] + dx[k]][index[1] + dy[k]] = True
                 similar_near(extendedField, (index[0] + dx[k], index[1] + dy[k]), list, visited)

@@ -80,6 +80,7 @@ class Rules(object):
 class GameWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.win = None
         self.painter = QPainter(self)
         self.field_size = 12
         self.field = GameField(self.field_size)
@@ -95,11 +96,19 @@ class GameWindow(QWidget):
         self.retranslate_ui(Win4)
         QMetaObject.connectSlotsByName(Win4)
 
+        self.win = QLabel("You Win!")
+        self.win.setGeometry(800, 500, 300, 100)
+        self.win.setFont(QFont("Times New Roman", 42))
+        self.win.setVisible(False)
+
     def draw_window(self, p):
         p.setBrush(Qt.NoBrush)
         pen = QPen(QColor(0, 0, 0))
         pen.setWidth(3)
         p.setPen(pen)
+        p.setFont(QFont("Times New Roman", 20))
+        p.drawText(700, 635, "Points: " + str(self.points))
+        p.drawText(700, 665, "Purpose: " + str(self.purpose))
         p.drawRect(50, 50, 100 + self.field_size * Cell.cell_size * 2, 200 + self.field_size * Cell.cell_size)
         pen.setColor(QColor(255, 255, 0))
         pen.setWidth(2)
@@ -147,6 +156,8 @@ class Win3(QMainWindow, Rules):
 class Win4(QMainWindow, GameWindow):
     def __init__(self, parent=None):
         super(Win4, self).__init__()
+        self.points = 0
+        self.purpose = 3
         self.setup_ui(self)
 
     def paintEvent(self, e):
@@ -157,20 +168,28 @@ class Win4(QMainWindow, GameWindow):
 
     def mousePressEvent(self, e):
         if e.button() == Qt.LeftButton:
-            if (e.pos().y() - 100) // Cell.cell_size < self.field_size and (e.pos().x() - 100) // Cell.cell_size < self.field_size*2:
+            if (e.pos().y() - 100) // Cell.cell_size < self.field_size and (
+                    e.pos().x() - 100) // Cell.cell_size < self.field_size * 2:
                 tuple1 = ((e.pos().y() - 100) // Cell.cell_size, (e.pos().x() - 100) // Cell.cell_size)
                 chain = Game.find_chain(self.field.field, tuple1)
                 if len(chain) > 1:
                     for k in chain:
                         self.field.field[k[0] - 1][k[1] - 1].color = Color.NONE
                     Game.delete_empty_cells(self.field.field)
+                    if len(chain) <= 8:
+                        self.points += len(chain)
+                    else:
+                        self.points += 8 + 2 * (len(chain) - 8)
+                    if self.points >= self.purpose:
+                        self.win.setVisible(True)
+                        self.window().close()
+
                     self.update()
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
         self.shuffle_btn2 = None
         self.shuffle_btn1 = None
         self.shuffle_btn = None
@@ -263,7 +282,6 @@ class MainWindow(QMainWindow):
         btn.setGeometry(QRect(560, 360, 70, 40))
         combo.show()
         label.show()
-        btn.show()
 
     def go_win1(self):
         self.stacked.setCurrentIndex(0)
