@@ -1,7 +1,6 @@
 from PyQt5.QtCore import QRect, QCoreApplication, QMetaObject, Qt
 from PyQt5.QtGui import QFont, QPainter, QPen, QColor
 from PyQt5.QtWidgets import QMainWindow, QStackedWidget, QWidget, QLabel, QPushButton, QLineEdit, QComboBox
-from PyQt5.uic.properties import QtWidgets
 
 import Cell
 import Game
@@ -82,7 +81,7 @@ class GameWindow(QWidget):
         super().__init__()
         self.win = None
         self.painter = QPainter(self)
-        self.field_size = 12
+        self.field_size = 10
         self.field = GameField(self.field_size)
         self.widgetWin4 = None
 
@@ -101,14 +100,19 @@ class GameWindow(QWidget):
         self.win.setFont(QFont("Times New Roman", 42))
         self.win.setVisible(False)
 
+    def change_field_size(self, value: int):
+        self.field_size = value
+        self.field = GameField(self.field_size)
+        self.update()
+
     def draw_window(self, p):
         p.setBrush(Qt.NoBrush)
         pen = QPen(QColor(0, 0, 0))
         pen.setWidth(3)
         p.setPen(pen)
         p.setFont(QFont("Times New Roman", 20))
-        p.drawText(700, 635, "Points: " + str(self.points))
-        p.drawText(700, 665, "Purpose: " + str(self.purpose))
+        p.drawText(2*self.field_size*Cell.cell_size - 50, 150 + self.field_size*Cell.cell_size, "Points: " + str(self.points))
+        p.drawText(2*self.field_size*Cell.cell_size - 50, 200 + self.field_size*Cell.cell_size, "Purpose: " + str(self.purpose))
         p.drawRect(50, 50, 100 + self.field_size * Cell.cell_size * 2, 200 + self.field_size * Cell.cell_size)
         pen.setColor(QColor(255, 255, 0))
         pen.setWidth(2)
@@ -190,6 +194,7 @@ class Win4(QMainWindow, GameWindow):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.combo = None
         self.shuffle_btn2 = None
         self.shuffle_btn1 = None
         self.shuffle_btn = None
@@ -214,19 +219,19 @@ class MainWindow(QMainWindow):
 
     def create_shuffle_button(self, parent):
         self.shuffle_btn = QPushButton("R", parent)
-        self.shuffle_btn.setGeometry(QRect(100, 600, 50, 50))
+        self.shuffle_btn.setGeometry(QRect(100, 150 + parent.field_size*Cell.cell_size, 50, 50))
         self.shuffle_btn.setFont(QFont("Times New Roman", 20))
         self.shuffle_btn.clicked.connect(self.shuffle_btn_clicked)
         self.shuffle_btn.show()
 
         self.shuffle_btn1 = QPushButton("R", parent)
-        self.shuffle_btn1.setGeometry(QRect(165, 600, 50, 50))
+        self.shuffle_btn1.setGeometry(QRect(165, 150 + parent.field_size*Cell.cell_size, 50, 50))
         self.shuffle_btn1.setFont(QFont("Times New Roman", 20))
         self.shuffle_btn1.clicked.connect(self.shuffle_btn_clicked1)
         self.shuffle_btn1.show()
 
         self.shuffle_btn2 = QPushButton("R", parent)
-        self.shuffle_btn2.setGeometry(QRect(230, 600, 50, 50))
+        self.shuffle_btn2.setGeometry(QRect(230, 150 + parent.field_size*Cell.cell_size, 50, 50))
         self.shuffle_btn2.setFont(QFont("Times New Roman", 20))
         self.shuffle_btn2.clicked.connect(self.shuffle_btn_clicked2)
         self.shuffle_btn2.show()
@@ -240,6 +245,9 @@ class MainWindow(QMainWindow):
         Game.shuffle(self.window_Win4.field.field)
         self.shuffle_btn1.setEnabled(False)
         self.update()
+
+    def save_btn_clicked(self):
+        GameWindow.change_field_size(self, int(self.combo.currentText().split(" x ")[0]))
 
     def shuffle_btn_clicked2(self):
         Game.shuffle(self.window_Win4.field.field)
@@ -269,19 +277,20 @@ class MainWindow(QMainWindow):
         btn_2.show()
         btn_3.show()
 
-    @staticmethod
-    def create_settings(parent):
+    def create_settings(self, parent):
         label = QLabel("Field size", parent)
         label.setGeometry(537, 230, 140, 80)
         label.setFont(QFont("Times New Roman", 20))
-        combo = QComboBox(parent)
-        combo.setGeometry(530, 300, 135, 50)
-        combo.addItems(["6 x 12", "8 x 16", "10 x 20", "12 x 24"])
-        combo.setFont(QFont("Times New Roman", 20))
+        self.combo = QComboBox(parent)
+        self.combo.setGeometry(530, 300, 135, 50)
+        self.combo.addItems(["6 x 12", "8 x 16", "10 x 20", "12 x 24"])
+        self.combo.setFont(QFont("Times New Roman", 20))
         btn = QPushButton("Save", parent)
         btn.setGeometry(QRect(560, 360, 70, 40))
-        combo.show()
+        self.combo.show()
+        btn.show()
         label.show()
+        btn.clicked.connect(self.save_btn_clicked)
 
     def go_win1(self):
         self.stacked.setCurrentIndex(0)
