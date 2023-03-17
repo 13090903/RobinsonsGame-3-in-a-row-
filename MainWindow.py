@@ -1,6 +1,8 @@
-from PyQt5.QtCore import QRect, QCoreApplication, QMetaObject, Qt
+import random
+
+from PyQt5.QtCore import QRect, QCoreApplication, QMetaObject, Qt, QTimer
 from PyQt5.QtGui import QFont, QPainter, QPen, QColor
-from PyQt5.QtWidgets import QMainWindow, QStackedWidget, QWidget, QLabel, QPushButton, QLineEdit, QComboBox
+from PyQt5.QtWidgets import QMainWindow, QStackedWidget, QWidget, QLabel, QPushButton, QLineEdit, QComboBox, QLCDNumber
 
 import Cell
 import Game
@@ -79,11 +81,18 @@ class Rules(object):
 class GameWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.lose = None
         self.win = None
         self.painter = QPainter(self)
         self.field_size = 10
         self.field = GameField(self.field_size)
         self.widgetWin4 = None
+
+    def change_field_size(self, value: int):
+        self.field_size = value
+        self.field = GameField(self.field_size)
+        GameWindow.draw_field(self, self.painter)
+        self.update()
 
     def setup_ui(self, Win4):
         Win4.setObjectName("Win4")
@@ -100,10 +109,10 @@ class GameWindow(QWidget):
         self.win.setFont(QFont("Times New Roman", 42))
         self.win.setVisible(False)
 
-    def change_field_size(self, value: int):
-        self.field_size = value
-        self.field = GameField(self.field_size)
-        self.update()
+        self.lose = QLabel("You Lose!")
+        self.lose.setGeometry(800, 500, 300, 100)
+        self.lose.setFont(QFont("Times New Roman", 42))
+        self.lose.setVisible(False)
 
     def draw_window(self, p):
         p.setBrush(Qt.NoBrush)
@@ -111,8 +120,12 @@ class GameWindow(QWidget):
         pen.setWidth(3)
         p.setPen(pen)
         p.setFont(QFont("Times New Roman", 20))
-        p.drawText(2*self.field_size*Cell.cell_size - 50, 150 + self.field_size*Cell.cell_size, "Points: " + str(self.points))
-        p.drawText(2*self.field_size*Cell.cell_size - 50, 200 + self.field_size*Cell.cell_size, "Purpose: " + str(self.purpose))
+        p.drawText(2 * self.field_size * Cell.cell_size - 50, 150 + self.field_size * Cell.cell_size,
+                   "Points: " + str(self.points))
+        p.drawText(2 * self.field_size * Cell.cell_size - 50, 200 + self.field_size * Cell.cell_size,
+                   "Purpose: " + str(self.purpose))
+        p.drawText(self.field_size * Cell.cell_size, 200 + self.field_size * Cell.cell_size,
+                   "Remaining time: " + str(self.time))
         p.drawRect(50, 50, 100 + self.field_size * Cell.cell_size * 2, 200 + self.field_size * Cell.cell_size)
         pen.setColor(QColor(255, 255, 0))
         pen.setWidth(2)
@@ -160,9 +173,35 @@ class Win3(QMainWindow, Rules):
 class Win4(QMainWindow, GameWindow):
     def __init__(self, parent=None):
         super(Win4, self).__init__()
+        self.time = 60
         self.points = 0
-        self.purpose = 3
+        self.purpose = self.field_size*30
+        self.flag = False
+        self.timer = QTimer(self)
         self.setup_ui(self)
+        self.timer.timeout.connect(self.show_time)
+        self.timer.setInterval(1000)
+
+    def add_balls(self):
+        counter = 0
+        colors = [Color.RED, Color.BLUE, Color.GREEN]
+        emp = Game.count_empty_and_found_pos(self.field.field)
+        for pos in emp:
+            if counter < min(len(emp), 10):
+                self.field.field[pos[0]][pos[1]].color = colors[random.randint(0, 2)]
+                counter = counter + 1
+        Game.delete_empty_cells(self.field.field)
+
+    def show_time(self):
+        self.time -= 1
+        self.update()
+        if self.time % 10 == 0 and self.time > 0:
+            self.add_balls()
+        if self.time < 0:
+            self.timer.stop()
+            self.time = 0
+            self.lose.setVisible(True)
+            self.window().close()
 
     def paintEvent(self, e):
         self.painter.begin(self)
@@ -172,6 +211,9 @@ class Win4(QMainWindow, GameWindow):
 
     def mousePressEvent(self, e):
         if e.button() == Qt.LeftButton:
+            if not self.flag:
+                self.timer.start()
+                self.flag = True
             if (e.pos().y() - 100) // Cell.cell_size < self.field_size and (
                     e.pos().x() - 100) // Cell.cell_size < self.field_size * 2:
                 tuple1 = ((e.pos().y() - 100) // Cell.cell_size, (e.pos().x() - 100) // Cell.cell_size)
@@ -187,7 +229,9 @@ class Win4(QMainWindow, GameWindow):
                     if self.points >= self.purpose:
                         self.win.setVisible(True)
                         self.window().close()
-
+                    if len(Game.count_balls_and_found_pos(self.field.field)) == 0:
+                        self.win.setVisible(True)
+                        self.window().close()
                     self.update()
 
 
@@ -198,6 +242,7 @@ class MainWindow(QMainWindow):
         self.shuffle_btn2 = None
         self.shuffle_btn1 = None
         self.shuffle_btn = None
+        self.painter = QPainter(self)
         self.stacked = QStackedWidget(self)
         self.setCentralWidget(self.stacked)
 
@@ -219,19 +264,19 @@ class MainWindow(QMainWindow):
 
     def create_shuffle_button(self, parent):
         self.shuffle_btn = QPushButton("R", parent)
-        self.shuffle_btn.setGeometry(QRect(100, 150 + parent.field_size*Cell.cell_size, 50, 50))
+        self.shuffle_btn.setGeometry(QRect(100, 150 + parent.field_size * Cell.cell_size, 50, 50))
         self.shuffle_btn.setFont(QFont("Times New Roman", 20))
         self.shuffle_btn.clicked.connect(self.shuffle_btn_clicked)
         self.shuffle_btn.show()
 
         self.shuffle_btn1 = QPushButton("R", parent)
-        self.shuffle_btn1.setGeometry(QRect(165, 150 + parent.field_size*Cell.cell_size, 50, 50))
+        self.shuffle_btn1.setGeometry(QRect(165, 150 + parent.field_size * Cell.cell_size, 50, 50))
         self.shuffle_btn1.setFont(QFont("Times New Roman", 20))
         self.shuffle_btn1.clicked.connect(self.shuffle_btn_clicked1)
         self.shuffle_btn1.show()
 
         self.shuffle_btn2 = QPushButton("R", parent)
-        self.shuffle_btn2.setGeometry(QRect(230, 150 + parent.field_size*Cell.cell_size, 50, 50))
+        self.shuffle_btn2.setGeometry(QRect(230, 150 + parent.field_size * Cell.cell_size, 50, 50))
         self.shuffle_btn2.setFont(QFont("Times New Roman", 20))
         self.shuffle_btn2.clicked.connect(self.shuffle_btn_clicked2)
         self.shuffle_btn2.show()
@@ -283,7 +328,7 @@ class MainWindow(QMainWindow):
         label.setFont(QFont("Times New Roman", 20))
         self.combo = QComboBox(parent)
         self.combo.setGeometry(530, 300, 135, 50)
-        self.combo.addItems(["6 x 12", "8 x 16", "10 x 20", "12 x 24"])
+        self.combo.addItems(["8 x 16", "10 x 20", "12 x 24"])
         self.combo.setFont(QFont("Times New Roman", 20))
         btn = QPushButton("Save", parent)
         btn.setGeometry(QRect(560, 360, 70, 40))
