@@ -89,9 +89,9 @@ class GameWindow(QWidget):
         self.widgetWin4 = None
 
     def change_field_size(self, value: int):
-        self.field_size = value
-        self.field = GameField(self.field_size)
-        GameWindow.draw_field(self, self.painter)
+        self.window_Win4.field_size = value
+        self.window_Win4.field = GameField(value)
+        GameWindow.draw_field(self.window_Win4, self.window_Win4.painter)
         self.update()
 
     def setup_ui(self, Win4):
@@ -175,7 +175,7 @@ class Win4(QMainWindow, GameWindow):
         super(Win4, self).__init__()
         self.time = 60
         self.points = 0
-        self.purpose = self.field_size*30
+        self.purpose = self.field_size * 30
         self.flag = False
         self.timer = QTimer(self)
         self.setup_ui(self)
@@ -293,6 +293,15 @@ class MainWindow(QMainWindow):
 
     def save_btn_clicked(self):
         GameWindow.change_field_size(self, int(self.combo.currentText().split(" x ")[0]))
+        self.window_Win4.time = 60
+        self.window_Win4.points = 0
+        self.window_Win4.purpose = self.window_Win4.field_size * 30
+        self.shuffle_btn.setEnabled(False)
+        self.shuffle_btn.setVisible(False)
+        self.shuffle_btn1.setEnabled(False)
+        self.shuffle_btn1.setVisible(False)
+        self.shuffle_btn2.setEnabled(False)
+        self.shuffle_btn2.setVisible(False)
 
     def shuffle_btn_clicked2(self):
         Game.shuffle(self.window_Win4.field.field)
@@ -336,6 +345,7 @@ class MainWindow(QMainWindow):
         btn.show()
         label.show()
         btn.clicked.connect(self.save_btn_clicked)
+        btn.clicked.connect(self.go_win4)
 
     def go_win1(self):
         self.stacked.setCurrentIndex(0)
