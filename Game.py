@@ -77,15 +77,15 @@ def column_is_empty(field, column):
     return True
 
 
-def shuffle(field):
-    colors = [Color.RED, Color.BLUE, Color.GREEN]
+def shuffle(field, colors_size):
+    colors = [Color.RED, Color.BLUE, Color.GREEN, Color.PURPLE, Color.YELLOW]
     balls_poses = count_balls_and_found_pos(field)
     if len(balls_poses) > 10:
         for i in range(len(balls_poses)):
-            field[balls_poses[i][0]][balls_poses[i][1]].color = colors[random.randint(0, 2)]
+            field[balls_poses[i][0]][balls_poses[i][1]].color = colors[random.randint(0, colors_size - 1)]
     elif len(balls_poses) > 4:
         for i in range(len(balls_poses)):
-            field[balls_poses[i][0]][balls_poses[i][1]].color = colors[random.randint(0, 1)]
+            field[balls_poses[i][0]][balls_poses[i][1]].color = colors[random.randint(0, colors_size - 2)]
     else:
         for i in range(len(balls_poses)):
             field[balls_poses[i][0]][balls_poses[i][1]].color = colors[0]

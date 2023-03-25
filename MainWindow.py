@@ -2,7 +2,7 @@ import random
 
 from PyQt5.QtCore import QRect, QCoreApplication, QMetaObject, Qt, QTimer
 from PyQt5.QtGui import QFont, QPainter, QPen, QColor
-from PyQt5.QtWidgets import QMainWindow, QStackedWidget, QWidget, QLabel, QPushButton, QLineEdit, QComboBox, QLCDNumber
+from PyQt5.QtWidgets import QMainWindow, QStackedWidget, QWidget, QLabel, QPushButton, QComboBox
 
 import Cell
 import Game
@@ -85,12 +85,19 @@ class GameWindow(QWidget):
         self.win = None
         self.painter = QPainter(self)
         self.field_size = 10
-        self.field = GameField(self.field_size)
+        self.colors_size = 3
+        self.field = GameField(self.field_size, self.colors_size)
         self.widgetWin4 = None
 
     def change_field_size(self, value: int):
         self.window_Win4.field_size = value
-        self.window_Win4.field = GameField(value)
+        self.window_Win4.field = GameField(value, self.window_Win4.colors_size)
+        GameWindow.draw_field(self.window_Win4, self.window_Win4.painter)
+        self.update()
+
+    def change_colors(self, value: int):
+        self.window_Win4.colors_size = value
+        self.window_Win4.field = GameField(self.window_Win4.field_size, value)
         GameWindow.draw_field(self.window_Win4, self.window_Win4.painter)
         self.update()
 
@@ -145,6 +152,12 @@ class GameWindow(QWidget):
                 elif cell.color == Color.GREEN:
                     p.setBrush(Qt.green)
                     p.drawEllipse(100 + j * cell.size, 100 + i * cell.size, cell.size, cell.size)
+                elif cell.color == Color.PURPLE:
+                    p.setBrush(Qt.darkMagenta)
+                    p.drawEllipse(100 + j * cell.size, 100 + i * cell.size, cell.size, cell.size)
+                elif cell.color == Color.YELLOW:
+                    p.setBrush(Qt.yellow)
+                    p.drawEllipse(100 + j * cell.size, 100 + i * cell.size, cell.size, cell.size)
 
     @staticmethod
     def retranslate_ui(Win4):
@@ -184,11 +197,11 @@ class Win4(QMainWindow, GameWindow):
 
     def add_balls(self):
         counter = 0
-        colors = [Color.RED, Color.BLUE, Color.GREEN]
+        colors = [Color.RED, Color.BLUE, Color.GREEN, Color.PURPLE, Color.YELLOW]
         emp = Game.count_empty_and_found_pos(self.field.field)
         for pos in emp:
             if counter < min(len(emp), 10):
-                self.field.field[pos[0]][pos[1]].color = colors[random.randint(0, 2)]
+                self.field.field[pos[0]][pos[1]].color = colors[random.randint(0, self.colors_size - 1)]
                 counter = counter + 1
         Game.delete_empty_cells(self.field.field)
 
@@ -238,6 +251,7 @@ class Win4(QMainWindow, GameWindow):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.combo1 = None
         self.combo = None
         self.shuffle_btn2 = None
         self.shuffle_btn1 = None
@@ -282,29 +296,33 @@ class MainWindow(QMainWindow):
         self.shuffle_btn2.show()
 
     def shuffle_btn_clicked(self):
-        Game.shuffle(self.window_Win4.field.field)
+        Game.shuffle(self.window_Win4.field.field, self.window_Win4.colors_size)
         self.shuffle_btn.setEnabled(False)
         self.update()
 
     def shuffle_btn_clicked1(self):
-        Game.shuffle(self.window_Win4.field.field)
+        Game.shuffle(self.window_Win4.field.field, self.window_Win4.colors_size)
         self.shuffle_btn1.setEnabled(False)
         self.update()
 
     def save_btn_clicked(self):
         GameWindow.change_field_size(self, int(self.combo.currentText().split(" x ")[0]))
+        GameWindow.change_colors(self, int(self.combo1.currentText()))
         self.window_Win4.time = 60
         self.window_Win4.points = 0
         self.window_Win4.purpose = self.window_Win4.field_size * 30
-        self.shuffle_btn.setEnabled(False)
-        self.shuffle_btn.setVisible(False)
-        self.shuffle_btn1.setEnabled(False)
-        self.shuffle_btn1.setVisible(False)
-        self.shuffle_btn2.setEnabled(False)
-        self.shuffle_btn2.setVisible(False)
+        if self.shuffle_btn:
+            self.shuffle_btn.setEnabled(False)
+            self.shuffle_btn.setVisible(False)
+        if self.shuffle_btn1:
+            self.shuffle_btn1.setEnabled(False)
+            self.shuffle_btn1.setVisible(False)
+        if self.shuffle_btn2:
+            self.shuffle_btn2.setEnabled(False)
+            self.shuffle_btn2.setVisible(False)
 
     def shuffle_btn_clicked2(self):
-        Game.shuffle(self.window_Win4.field.field)
+        Game.shuffle(self.window_Win4.field.field, self.window_Win4.colors_size)
         self.shuffle_btn2.setEnabled(False)
         self.update()
 
@@ -340,10 +358,19 @@ class MainWindow(QMainWindow):
         self.combo.addItems(["8 x 16", "10 x 20", "12 x 24"])
         self.combo.setFont(QFont("Times New Roman", 20))
         btn = QPushButton("Save", parent)
-        btn.setGeometry(QRect(560, 360, 70, 40))
+        btn.setGeometry(QRect(560, 490, 70, 40))
         self.combo.show()
+        label1 = QLabel("Colors", parent)
+        label1.setGeometry(537, 350, 200, 80)
+        label1.setFont(QFont("Times New Roman", 20))
+        self.combo1 = QComboBox(parent)
+        self.combo1.setGeometry(530, 420, 135, 50)
+        self.combo1.addItems(["3", "4", "5"])
+        self.combo1.setFont(QFont("Times New Roman", 20))
+        self.combo1.show()
         btn.show()
         label.show()
+        label1.show()
         btn.clicked.connect(self.save_btn_clicked)
         btn.clicked.connect(self.go_win4)
 
